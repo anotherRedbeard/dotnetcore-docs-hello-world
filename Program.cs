@@ -22,4 +22,7 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+// Configure the application to listen on port 80
+app.Urls.Add("http://*:80");
+
 app.Run();

@@ -72,4 +72,4 @@ jobs:
 
       - name: Ensure app is using mi to connect to ACR
         run: |
-          az webapp config container set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --acr-use-managed-identity true
+          az webapp config container set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RG_NAME }} --acr-use-managed-identity true

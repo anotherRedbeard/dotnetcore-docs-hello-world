@@ -31,6 +31,11 @@ jobs:
         run: |
           az acr login --name redsccanprivateacr
 
+      - name: List files in current directory
+        run: |
+          pwd
+          ls -al
+          
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:

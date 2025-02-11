@@ -69,3 +69,7 @@ jobs:
         with:
           app-name: ${{ vars.AZURE_APP_NAME }}
           images: ${{ vars.AZURE_ACR_NAME }}.azurecr.io/dotnetcore-docs-hello-world:latest
+
+      - name: Ensure app is using mi to connect to ACR
+        run: |
+          az webapp config container set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --acr-use-managed-identity true

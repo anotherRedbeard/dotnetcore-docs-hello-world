@@ -63,6 +63,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2ECD1F639A7E419F8A95F40F747F9BA2 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C00024F2D8934E0383D854A8B2C2D7A3 }}
 
-      - name: 'Deploy to Azure Web App'
-        run: |
-          az webapp config container set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RG_NAME }}  --docker-custom-image-name ${{ vars.AZURE_ACR_NAME }}.azurecr.io/dotnetcore-docs-hello-world:latest --docker-registry-server-url https://${{ vars.AZURE_ACR_NAME }}.azurecr.io
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_APP_NAME }}
+          images: ${{ vars.AZURE_ACR_NAME }}.azurecr.io/dotnetcore-docs-hello-world:latest

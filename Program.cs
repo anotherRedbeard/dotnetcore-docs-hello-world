@@ -1,9 +1,23 @@
+using dotnetcoresample;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddTransient<CommandLineApp>();
 
 var app = builder.Build();
+
+// Check for command-line arguments
+if (args.Contains("run-command-line"))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var commandLineApp = scope.ServiceProvider.GetRequiredService<CommandLineApp>();
+        commandLineApp.Run();
+    }
+    return;
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

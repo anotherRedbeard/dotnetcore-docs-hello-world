@@ -12,19 +12,22 @@ az acr login -n <your_registry_name>
 
 ## Running in a Docker Container
 
-This repository contains 2 Dockerfiles, a Linux container and a Windows container.
+### Locally
 
-### Publish the Windows image to your Registry
-
-To build the Windows image locally and publish to ACR, run the following command:
+To run the app locally, use the following command:
 
 ```docker
-docker build -f Dockerfile.windows -t dotnetcore-docs-hello-world-windows . 
-docker tag dotnetcore-docs-hello-world-windows <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-windows:latest
-docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-windows:latest
+docker build -f Dockerfile.linux -t dotnetcore-docs-hello-world .
+docker run -d --name hello-world -p 8080:80 dotnetcore-docs-hello-world
 ```
 
-### Publish the Linux image to your Registry
+To test the web app, navigate to `http://localhost:8080` in your browser. To test the command line app, run the following command:
+
+```docker
+docker exec hello-world dotnet /app/dotnetcoresample.dll run-command-line
+```
+
+### Publish the image to your Registry
 
 To build the Linux image locally and publish to ACR, run the following command:
 

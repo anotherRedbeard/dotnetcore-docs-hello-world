@@ -1,4 +1,6 @@
 using dotnetcoresample;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,5 +40,19 @@ app.MapRazorPages();
 
 // Configure the application to listen on port 80
 app.Urls.Add("http://*:80");
+
+// Configure and run WebJobs
+var host = new HostBuilder()
+    .ConfigureWebJobs(webJobsBuilder =>
+    {
+        webJobsBuilder.AddTimers();
+    })
+    .ConfigureLogging(logging =>
+    {
+        logging.AddConsole();
+    })
+    .Build();
+
+await host.RunAsync();
 
 app.Run();

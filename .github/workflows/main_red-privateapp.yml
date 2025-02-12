@@ -25,19 +25,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C1266B4791B4476E9013046618FA1F54 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2ECD1F639A7E419F8A95F40F747F9BA2 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C00024F2D8934E0383D854A8B2C2D7A3 }}
+          client-id: ${{ secrets.AAZURE_MI_CLIENT_ID }}
+          tenant-id: ${{ secrets.ENTRA_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to Azure Container Registry
         run: |
           az acr login --name ${{ vars.AZURE_ACR_NAME }}
 
-      - name: List files in current directory
-        run: |
-          pwd
-          ls -al
-          
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -59,9 +54,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_C1266B4791B4476E9013046618FA1F54 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2ECD1F639A7E419F8A95F40F747F9BA2 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C00024F2D8934E0383D854A8B2C2D7A3 }}
+          client-id: ${{ secrets.AZURE_MI_CLIENT_ID }}
+          tenant-id: ${{ secrets.ENTRA_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -72,4 +67,8 @@ jobs:
 
       - name: Ensure app is using mi to connect to ACR
         run: |
-          az webapp config set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RG_NAME }} --generic-configurations '{"acrUseManagedIdentityCreds":true,"acrUserManagedIdentityID":"${{ secrets.AZUREAPPSERVICE_CLIENTID_C1266B4791B4476E9013046618FA1F54 }}"}'
+          az webapp config set --name ${{ vars.AZURE_APP_NAME }} --resource-group ${{ vars.AZURE_RG_NAME }} --generic-configurations '{"acrUseManagedIdentityCreds":true,"acrUserManagedIdentityID":"${{ secrets.AZURE_MI_CLIENT_ID }}"}'
+
+      - name: Sign out of Azure
+        run: |
+          az logout

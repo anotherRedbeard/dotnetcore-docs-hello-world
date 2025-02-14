@@ -28,13 +28,13 @@ RUN chmod 755 /bin/init_container.sh \
   && mkdir -p /home/LogFiles/ \
   && chmod 755 /opt/startup.sh
 
+  # =============== Add WebJob to the Container ===============
+WORKDIR /app_data/jobs/Triggered/TriggeredDemo
+COPY webJobSample.sh .
+
 # =============== Install application source code =============== 
 WORKDIR /app
 COPY --from=build /app ./
-
-# =============== Add WebJob to the Container ===============
-WORKDIR /app_data/jobs/Triggered/TriggeredDemo
-COPY webJobSample.sh .
 
 # Expose port 80
 # This is important in order for the Azure App Service to pick up the app

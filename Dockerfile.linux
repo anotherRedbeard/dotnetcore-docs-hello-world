@@ -22,11 +22,9 @@ RUN apt-get update -qq \
 
 COPY init_container.sh /bin/
 COPY startup.sh /opt/
-COPY sshd_config /etc/ssh/
 
 RUN chmod 755 /bin/init_container.sh \
-  && mkdir -p /home/LogFiles/ \
-  && chmod 755 /opt/startup.sh
+  && mkdir -p /home/LogFiles/ 
 
   # =============== Add WebJob to the Container ===============
 WORKDIR /app_data/jobs/Triggered/TriggeredDemo

@@ -1,8 +1,6 @@
 # Start with the .NET SDK for building the app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
-
-
 # Work within a folder named `/source`
 WORKDIR /source
 
@@ -29,7 +27,7 @@ RUN chmod 755 /bin/init_container.sh \
   && chmod 755 /opt/startup.sh
 
   # =============== Add WebJob to the Container ===============
-WORKDIR /app_data/jobs/Triggered/TriggeredDemo
+WORKDIR /App_Data/jobs/triggered/TriggeredDemo
 COPY webJobSample.sh .
 RUN chmod +x webJobSample.sh
 COPY settings.job .

@@ -27,7 +27,7 @@ RUN chmod 755 /bin/init_container.sh \
   && chmod 755 /opt/startup.sh
 
   # =============== Add WebJob to the Container ===============
-WORKDIR /home/site/wwwroot/App_Data/jobs/triggered/TriggeredDemo
+WORKDIR /webjobs/triggered/triggeredDemo
 COPY webJobSample.sh .
 COPY settings.job .
 RUN chmod +x webJobSample.sh

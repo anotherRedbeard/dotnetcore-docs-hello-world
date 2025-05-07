@@ -68,9 +68,9 @@ docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:la
 
 The `Dockerfile.linux` sets the following environment variables:
 
-*   `PORT=80`: Standard port for the web application.
-*   `SSH_PORT=2222`: Port exposed for SSH access into the container (primarily for debugging).
-*   `ASPNETCORE_URLS=http://+:80`: Configures the ASP.NET Core application to listen on port 80 for incoming HTTP requests.
+* `PORT=80`: Standard port for the web application.
+* `SSH_PORT=2222`: Port exposed for [SSH access](https://learn.microsoft.com/en-us/azure/app-service/configure-custom-container?pivots=container-linux&tabs=debian#enable-ssh) into the container (primarily for debugging).
+* `ASPNETCORE_URLS=http://+:80`: Configures the ASP.NET Core application to listen on port 80 for incoming HTTP requests.
 
 ## GitHub Actions Worflow
 

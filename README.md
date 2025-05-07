@@ -1,8 +1,26 @@
+# .NET 8 Web Application with Background WebJob in a Custom Linux Container
+
+This solution demonstrates a .NET 8 ASP.NET Core web application running alongside a scheduled .NET WebJob, all packaged within a custom Linux Docker container. It's designed for deployment to Azure App Service, showcasing how to integrate background processing (via WebJobs) with a web frontend in a containerized Azure environment. The project includes Docker configurations, shell scripts for container initialization and WebJob execution, and a GitHub Actions workflow for automated deployment to Azure.
+
 # .NET 8 Hello World
 
 Forked from [dotnetcore-docs-hello-world](https://github.com/Azure-Samples/dotnetcore-docs-hello-world)
 
 This sample demonstrates a tiny Hello World .NET Core app for [App Service Web App](https://docs.microsoft.com/azure/app-service-web). This sample can be used in a .NET Azure App Service app as well as in a Custom Container Azure App Service app.
+
+Another feature of this sample is it uses [WebJobs in Azure App Service](https://learn.microsoft.com/en-us/azure/app-service/overview-webjobs). I'm using a triggered, scheduled WebJob to run a command line app. The command line app is a simple console app that runs every 5 minutes and writes to the console.
+The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying `webjobs/webJobSample.sh` (the execution script) and `webjobs/settings.job` (the schedule) to the conventional `/webjobs/triggered/triggeredDemo` path within the image. The `webJobSample.sh` script then executes the `dotnetcoresample.dll run-command-line` command.
+
+## Key Components
+
+* **`Program.cs`**: Main entry point for the ASP.NET Core web application.
+* **`CommandLineApp.cs`**: Implements the logic for the .NET WebJob, which is executed on a schedule.
+* **`Dockerfile.linux`**: Defines the custom Linux Docker image, including setup for the web app, SSH, and the WebJob.
+* **`webjobs/webJobSample.sh`**: Shell script that runs the .NET WebJob (`CommandLineApp.cs`) inside the container.
+* **`webjobs/settings.job`**: Configuration file for the WebJob, defining its schedule (e.g., CRON expression).
+* **`startup.sh`**: Script executed by `init_container.sh` to start the SSH service and the ASP.NET Core application.
+* **`init_container.sh`**: The main entry point for the Docker container, responsible for initializing services.
+* **`.github/workflows/main_red-privateapp.yml`**: GitHub Actions workflow for CI/CD, building the Docker image, pushing it to Azure Container Registry (ACR), and deploying to Azure App Service.
 
 ## Log in to Azure Container Registry
 
@@ -28,6 +46,13 @@ To test the web app, navigate to `http://localhost:8080` in your browser. To tes
 ```docker
 docker exec hello-world dotnet /app/dotnetcoresample.dll run-command-line
 ```
+Note: The `run-command-line` argument is handled in `Program.cs` to specifically trigger the `CommandLineApp.Run()` method, which contains the WebJob's logic.
+
+In some cases, you may need to log into the container to run the command line app. To do this, use the following command:
+
+```docker
+docker exec -it hello-world /bin/bash
+```
 
 ### Publish the image to your Registry
 
@@ -39,9 +64,17 @@ docker tag dotnetcore-docs-hello-world-windows <your_registry_name>.azurecr.io/d
 docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
 ```
 
-### GitHub Actions Worflow
+## Dockerfile Environment Variables
 
-#### main_red-privateapp.yml
+The `Dockerfile.linux` sets the following environment variables:
+
+*   `PORT=80`: Standard port for the web application.
+*   `SSH_PORT=2222`: Port exposed for SSH access into the container (primarily for debugging).
+*   `ASPNETCORE_URLS=http://+:80`: Configures the ASP.NET Core application to listen on port 80 for incoming HTTP requests.
+
+## GitHub Actions Worflow
+
+### main_red-privateapp.yml
 
 This workflow automates the deployment of your application to Azure App Service using a custom Docker image. It logs in to Azure, builds and pushes the Docker image to Azure Container Registry (ACR), and then deploys the image to Azure App Service.
 

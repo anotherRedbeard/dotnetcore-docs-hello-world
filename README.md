@@ -11,6 +11,27 @@ This sample demonstrates a tiny Hello World .NET Core app for [App Service Web A
 Another feature of this sample is it uses [WebJobs in Azure App Service](https://learn.microsoft.com/en-us/azure/app-service/overview-webjobs). I'm using a triggered, scheduled WebJob to run a command line app. The command line app is a simple console app that runs every 5 minutes and writes to the console.
 The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying `webjobs/webJobSample.sh` (the execution script) and `webjobs/settings.job` (the schedule) to the conventional `/webjobs/triggered/triggeredDemo` path within the image. The `webJobSample.sh` script then executes the `dotnetcoresample.dll run-command-line` command.
 
+## Features
+
+### Web Application
+The application provides a simple web interface built with ASP.NET Core Razor Pages.
+
+### RESTful APIs
+The application includes RESTful API endpoints:
+
+* **Weather API**: Provides weather forecasts for US zipcodes
+  * Endpoint: `GET /api/weather/{zipCode}`
+  * Example: `http://localhost:8080/api/weather/90210`
+
+### API Documentation Page
+The application includes a built-in API documentation page that allows users to explore and test the available APIs:
+* Access it via the "APIs" link in the navigation menu
+* Each API is documented with endpoints, parameters, and return values
+* Interactive testing interface allows you to try APIs directly from the documentation page
+
+### Background Processing
+The application demonstrates how to implement background processing in Azure App Service using WebJobs.
+
 ## Key Components
 
 * **`Program.cs`**: Main entry point for the ASP.NET Core web application.
@@ -20,6 +41,9 @@ The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying `w
 * **`webjobs/settings.job`**: Configuration file for the WebJob, defining its schedule (e.g., CRON expression).
 * **`startup.sh`**: Script executed by `init_container.sh` to start the SSH service and the ASP.NET Core application.
 * **`init_container.sh`**: The main entry point for the Docker container, responsible for initializing services.
+* **`Controllers/WeatherController.cs`**: API controller implementing the Weather API endpoint.
+* **`Models/WeatherForecast.cs`**: Data model for weather forecast information.
+* **`Pages/APIs.cshtml`**: Documentation page for APIs with interactive testing capabilities.
 * **`.github/workflows/main_red-privateapp.yml`**: GitHub Actions workflow for CI/CD, building the Docker image, pushing it to Azure Container Registry (ACR), and deploying to Azure App Service.
 
 ## Log in to Azure Container Registry

@@ -1,0 +1,86 @@
+@page
+@model dotnetcoresample.Pages.APIsModel
+@{
+    ViewData["Title"] = "API Documentation";
+}
+
+<h1>API Documentation</h1>
+
+<p>
+    This page provides documentation for the APIs available in this application.
+    You can test these endpoints directly by clicking on the links below.
+</p>
+
+<div class="card-deck mb-3">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header">
+            <h4 class="my-0 font-weight-normal">Weather API</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Get Weather by Zipcode</h5>
+            <p class="card-text">Retrieves weather information for a specific US zipcode.</p>
+            <h6>Endpoint:</h6>
+            <code>GET /api/weather/{zipCode}</code>
+            <h6>Parameters:</h6>
+            <ul>
+                <li><code>zipCode</code> - A valid 5-digit US postal code</li>
+            </ul>
+            <h6>Returns:</h6>
+            <ul>
+                <li>Date - Current date and time</li>
+                <li>TemperatureC - Temperature in Celsius</li>
+                <li>TemperatureF - Temperature in Fahrenheit</li>
+                <li>Summary - Weather description</li>
+                <li>ZipCode - The requested zipcode</li>
+            </ul>
+            <h6>Try it:</h6>
+            <div class="form-group">
+                <div class="input-group mb-3">
+                    <input type="text" id="zipCodeInput" class="form-control" placeholder="Enter zipcode (e.g., 90210)" maxlength="5" pattern="[0-9]{5}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="button" id="testWeatherApi">Test</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <p>Example URL: <a href="/api/weather/90210" target="_blank">/api/weather/90210</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="apiResponse" class="card mb-4 d-none">
+    <div class="card-header">
+        <h4 class="my-0 font-weight-normal">API Response</h4>
+    </div>
+    <div class="card-body">
+        <pre id="responseContent" class="bg-light p-3" style="max-height: 300px; overflow-y: auto;"></pre>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('testWeatherApi').addEventListener('click', async function() {
+            const zipCodeInput = document.getElementById('zipCodeInput');
+            const zipCode = zipCodeInput.value.trim();
+            
+            // Validate zipcode
+            if (!/^\d{5}$/.test(zipCode)) {
+                alert('Please enter a valid 5-digit zipcode');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/weather/${zipCode}`);
+                const data = await response.json();
+                
+                // Display the response
+                document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+                document.getElementById('apiResponse').classList.remove('d-none');
+            } catch (error) {
+                document.getElementById('responseContent').textContent = `Error: ${error.message}`;
+                document.getElementById('apiResponse').classList.remove('d-none');
+            }
+        });
+    </script>
+}

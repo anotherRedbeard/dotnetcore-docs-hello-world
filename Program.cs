@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddControllers(); // Add support for API controllers
 builder.Services.AddTransient<CommandLineApp>();
 
 var app = builder.Build();
@@ -35,6 +36,7 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
+app.MapControllers(); // Map API controller routes
 
 // Configure the application to listen on port 80
 app.Urls.Add("http://*:80");

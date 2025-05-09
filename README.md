@@ -14,9 +14,11 @@ The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying `w
 ## Features
 
 ### Web Application
+
 The application provides a simple web interface built with ASP.NET Core Razor Pages.
 
 ### RESTful APIs
+
 The application includes RESTful API endpoints:
 
 * **Weather API**: Provides weather forecasts for US zipcodes
@@ -24,12 +26,15 @@ The application includes RESTful API endpoints:
   * Example: `http://localhost:8080/api/weather/90210`
 
 ### API Documentation Page
+
 The application includes a built-in API documentation page that allows users to explore and test the available APIs:
+
 * Access it via the "APIs" link in the navigation menu
 * Each API is documented with endpoints, parameters, and return values
 * Interactive testing interface allows you to try APIs directly from the documentation page
 
 ### Background Processing
+
 The application demonstrates how to implement background processing in Azure App Service using WebJobs.
 
 ## Key Components

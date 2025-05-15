@@ -70,15 +70,20 @@
                 return;
             }
             
+            const url = `/api/weather/${zipCode}`;
             try {
-                const response = await fetch(`/api/weather/${zipCode}`);
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                // Display the response
-                document.getElementById('responseContent').textContent = JSON.stringify(data, null, 2);
+                // Display the response and the full URL
+                document.getElementById('responseContent').innerHTML =
+                    `<div>URL: <a href="${url}" target="_blank">${window.location.origin}${url}</a></div>` +
+                    `<pre style="margin-top:10px;">${JSON.stringify(data, null, 2)}</pre>`;
                 document.getElementById('apiResponse').classList.remove('d-none');
             } catch (error) {
-                document.getElementById('responseContent').textContent = `Error: ${error.message}`;
+                document.getElementById('responseContent').innerHTML =
+                    `<div>URL: <a href="${url}" target="_blank">${window.location.origin}${url}</a></div>` +
+                    `<pre style="margin-top:10px;">Error: ${error.message}</pre>`;
                 document.getElementById('apiResponse').classList.remove('d-none');
             }
         });

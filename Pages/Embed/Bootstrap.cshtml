@@ -1,0 +1,42 @@
+@page "/embed/bootstrap"
+@{
+    Layout = null;
+}
+
+<!-- /embed/bootstrap -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Loading…</title></head>
+<body>
+<script>
+  // 1) Announce readiness to parent (limit to your parent origin if known)
+  const parentOrigin = 'https://your-tab-domain.example'; // or https://teams.microsoft.com when embedded there
+  if (window.parent !== window) {
+    window.parent.postMessage('embed:ready', '*'); // can use * to get initial response; validate on receive below
+  }
+
+  // 2) Receive token from allowed parent, start session, then redirect
+  window.addEventListener('message', async (ev) => {
+    const allowedParents = ['https://your-tab-domain.example', 'https://teams.microsoft.com', 'http://localhost'];
+    if (!allowedParents.includes(ev.origin)) return;
+    if (!ev.data || ev.data.type !== 'embed:token') return;
+
+    try {
+      const res = await fetch('/api/session/start', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: ev.data.token })
+      });
+      if (!res.ok) throw new Error('session start failed');
+    
+      // Redirect to protected app without token in URL
+      window.location.replace('/');
+    } catch (e) {
+      document.body.textContent = 'Unable to start session.';
+      console.error(e);
+    }
+  }, { once: true });
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@ Forked from [dotnetcore-docs-hello-world](https://github.com/Azure-Samples/dotne
 This sample demonstrates a tiny Hello World .NET Core app for [App Service Web App](https://docs.microsoft.com/azure/app-service-web). This sample can be used in a .NET Azure App Service app as well as in a Custom Container Azure App Service app.
 
 Another feature of this sample is it uses [WebJobs in Azure App Service](https://learn.microsoft.com/en-us/azure/app-service/overview-webjobs). I'm using a triggered, scheduled WebJob to run a command line app. The command line app is a simple console app that runs every 5 minutes and writes to the console.
-The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying `webjobs/webJobSample.sh` (the execution script) and `webjobs/settings.job` (the schedule) to the conventional `/webjobs/triggered/triggeredDemo` path within the image. The `webJobSample.sh` script then executes the `dotnetcoresample.dll run-command-line` command.
+The WebJob `TriggeredDemo` is configured in the `Dockerfile.linux` by copying the `webjobs/triggered/TriggeredDemo/webJobSample.sh` execution script and `webjobs/triggered/TriggeredDemo/settings.job` schedule into the image under `/webjobs/triggered/TriggeredDemo`. The `webJobSample.sh` script executes `dotnetcoresample.dll run-command-line`.
 
 ## Features
 
@@ -42,13 +42,14 @@ The application demonstrates how to implement background processing in Azure App
 * **`Program.cs`**: Main entry point for the ASP.NET Core web application.
 * **`CommandLineApp.cs`**: Implements the logic for the .NET WebJob, which is executed on a schedule.
 * **`Dockerfile.linux`**: Defines the custom Linux Docker image, including setup for the web app, SSH, and the WebJob.
-* **`webjobs/webJobSample.sh`**: Shell script that runs the .NET WebJob (`CommandLineApp.cs`) inside the container.
-* **`webjobs/settings.job`**: Configuration file for the WebJob, defining its schedule (e.g., CRON expression).
+* **`webjobs/triggered/TriggeredDemo/webJobSample.sh`**: Shell script that runs the .NET WebJob (`CommandLineApp.cs`) inside the container.
+* **`webjobs/triggered/TriggeredDemo/settings.job`**: Configuration file for the WebJob, defining its schedule (e.g., CRON expression).
 * **`startup.sh`**: Script executed by `init_container.sh` to start the SSH service and the ASP.NET Core application.
 * **`init_container.sh`**: The main entry point for the Docker container, responsible for initializing services.
 * **`Controllers/WeatherController.cs`**: API controller implementing the Weather API endpoint.
 * **`Models/WeatherForecast.cs`**: Data model for weather forecast information.
 * **`Pages/APIs.cshtml`**: Documentation page for APIs with interactive testing capabilities.
+* **`Pages/Embed/Bootstrap.cshtml`**: Minimal embed bootstrap page used for Teams tab handshake testing.
 * **`.github/workflows/main_red-privateapp.yml`**: GitHub Actions workflow for CI/CD, building the Docker image, pushing it to Azure Container Registry (ACR), and deploying to Azure App Service.
 
 ## Log in to Azure Container Registry
@@ -88,8 +89,8 @@ docker exec -it hello-world /bin/bash
 To build the Linux image locally and publish to ACR, run the following command:
 
 ```docker
-docker build -f Dockerfile.linux -t dotnetcore-docs-hello-world-linux . 
-docker tag dotnetcore-docs-hello-world-windows <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
+docker build -f Dockerfile.linux -t dotnetcore-docs-hello-world-linux .
+docker tag dotnetcore-docs-hello-world-linux <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
 docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
 ```
 
@@ -101,7 +102,7 @@ The `Dockerfile.linux` sets the following environment variables:
 * `SSH_PORT=2222`: Port exposed for [SSH access](https://learn.microsoft.com/en-us/azure/app-service/configure-custom-container?pivots=container-linux&tabs=debian#enable-ssh) into the container (primarily for debugging).
 * `ASPNETCORE_URLS=http://+:80`: Configures the ASP.NET Core application to listen on port 80 for incoming HTTP requests.
 
-## GitHub Actions Worflow
+## GitHub Actions Workflow
 
 ### main_red-privateapp.yml
 
@@ -110,7 +111,7 @@ This workflow automates the deployment of your application to Azure App Service 
 #### Workflow Steps
 
 1. **Login to Azure:** Uses the Azure login action to authenticate with Azure using a service principal.
-  a. **User Assigned Managed Identity:** A User Assigned Managed Identity is used to log into azure and perform the actions of both the build and deploy steps with a federated credential. By default, GitHub will use two different subjects in the build and deploy stages, so you will need to ensure you have two federated credentials that match these two subjects.
+  a. **User Assigned Managed Identity:** A User Assigned Managed Identity is used to log into Azure and perform the actions of both the build and deploy steps with a federated credential. By default, GitHub will use two different subjects in the build and deploy stages, so you will need to ensure you have two federated credentials that match these two subjects.
   b. **Update secrets and variables:** Please make sure you update the secrets and variables needed in GitHub settings:
 
     | Secret/Variable Name       | Description                                      |

@@ -17,7 +17,7 @@
 
   // 2) Receive token from allowed parent, start session, then redirect
   window.addEventListener('message', async (ev) => {
-    const allowedParents = ['https://your-tab-domain.example', 'https://teams.microsoft.com', 'http://localhost:53000'];
+    const allowedParents = ['https://your-tab-domain.example', 'https://teams.microsoft.com','http://localhost.com', 'https://localhost:53000'];
     if (!allowedParents.includes(ev.origin)) return;
     if (!ev.data || ev.data.type !== 'embed:token') return;
 

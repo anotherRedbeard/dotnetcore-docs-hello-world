@@ -1,6 +1,11 @@
 @page "/embed/bootstrap"
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
 @{
     Layout = null;
+    var csv = Config["EMBED_ALLOWED_ORIGINS"] ?? "";
+    var allowed = csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var allowedJson = System.Text.Json.JsonSerializer.Serialize(allowed);
 }
 
 <!-- /embed/bootstrap -->
@@ -10,14 +15,13 @@
 <body>
 <script>
   // 1) Announce readiness to parent (limit to your parent origin if known)
-  const parentOrigin = 'https://your-tab-domain.example'; // or https://teams.microsoft.com when embedded there
   if (window.parent !== window) {
     window.parent.postMessage('embed:ready', '*'); // can use * to get initial response; validate on receive below
   }
 
   // 2) Receive token from allowed parent, start session, then redirect
   window.addEventListener('message', async (ev) => {
-    const allowedParents = ['https://your-tab-domain.example', 'https://teams.microsoft.com','http://localhost.com', 'https://localhost:53000'];
+    const allowedParents = @Html.Raw(allowedJson); // use allowedParents.includes(ev.origin)
     if (!allowedParents.includes(ev.origin)) return;
     if (!ev.data || ev.data.type !== 'embed:token') return;
 

@@ -52,6 +52,26 @@ The application demonstrates how to implement background processing in Azure App
 * **`Pages/Embed/Bootstrap.cshtml`**: Minimal embed bootstrap page used for Teams tab handshake testing.
 * **`.github/workflows/main_red-privateapp.yml`**: GitHub Actions workflow for CI/CD, building the Docker image, pushing it to Azure Container Registry (ACR), and deploying to Azure App Service.
 
+### Teams embed handshake (new)
+
+This sample includes a minimal “embed bootstrap” flow to support hosting this site inside a Microsoft Teams tab via postMessage:
+
+* `Pages/Embed/Bootstrap.cshtml` — Child page loaded inside an iframe in Teams. It:
+  * posts `'embed:ready'` to its parent when iframed
+  * listens for `{ type: 'embed:token', token }` from an allowed parent origin
+  * calls `POST /api/session/start` with the token and, on success, redirects to `/`
+
+* `Controllers/SessionController.cs` — Backend endpoints for the flow:
+  * `POST /api/session/start` — For dev, accepts token `"123"`, sets a secure cookie (`SameSite=None; Secure`), and returns 204.
+  * `GET /api/session/embed-token` — Returns a short‑lived RS256 JWT when `EMBED_JWT_PRIVATE_KEY` (PEM) is configured; otherwise returns the dev token `"123"` for local testing.
+
+Local testing tips:
+
+* Run with HTTPS. Example: set `ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000"` when running locally.
+* In a browser on `https://localhost:5001/embed/bootstrap`, simulate the parent reply in DevTools:
+  * `window.dispatchEvent(new MessageEvent('message', { data: { type: 'embed:token', token: '123' }, origin: 'https://teams.microsoft.com' }))`
+* In a real parent host page, listen for `'embed:ready'` from the iframe and reply with `{ type: 'embed:token', token }` using the iframe’s origin as `targetOrigin`.
+
 ## Log in to Azure Container Registry
 
 Using the Azure CLI, log in to the Azure Container Registry (ACR):
@@ -87,7 +107,7 @@ docker exec -it hello-world /bin/bash
 ### Publish the image to your Registry
 
 To build the Linux image locally and publish to ACR, run the following command:
-
+ 
 ```docker
 docker build -f Dockerfile.linux -t dotnetcore-docs-hello-world-linux .
 docker tag dotnetcore-docs-hello-world-linux <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest

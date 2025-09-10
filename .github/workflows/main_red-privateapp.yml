@@ -67,7 +67,9 @@ jobs:
             --settings EMBED_ALLOWED_ORIGINS="https://teams.microsoft.com,https://localhost:53000" \
               AAD_TENANT_ID="${{ secrets.ENTRA_TENANT_ID }}" \
               AAD_AUTHORITY="https://login.microsoftonline.com/${{ secrets.ENTRA_TENANT_ID }}/v2.0" \
-              EMBED_EXPECTED_AUDIENCES="api://localhost:53000/${{ secrets.ENTRA_TENANT_ID }}" 
+              EMBED_EXPECTED_AUDIENCES="api://localhost:53000/${{ secrets.ENTRA_TENANT_ID }}" \
+              Debug:EnableBypass="true" \
+              Debug:BypassSecret="bar"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp

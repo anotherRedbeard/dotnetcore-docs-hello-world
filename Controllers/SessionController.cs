@@ -1,92 +1,144 @@
 // Controllers/SessionController.cs
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using System.Collections.Concurrent;
 [ApiController]
 [Route("api/session")]
 public class SessionController : ControllerBase
 {
+    private readonly ILogger<SessionController> _logger;
+    private readonly string _tenantId;
+    private readonly string _authority;
+    private readonly string[] _expectedAudiences;
+    private static readonly ConcurrentDictionary<string, ConfigurationManager<OpenIdConnectConfiguration>> _authorityMetadata = new();
+
     public record SessionStartDto(string? token);
 
-    [HttpPost("start")]
-    public IActionResult Start([FromBody] SessionStartDto body)
+    public SessionController(ILogger<SessionController> logger, IConfiguration configuration)
     {
-        if (body?.token != "123")
+        _logger = logger;
+        // Prefer hierarchical keys if you adopt them later (AAD:TenantId etc.)
+        _tenantId = configuration["AAD_TENANT_ID"] ?? configuration["AAD:TenantId"] ?? string.Empty;
+        var authorityConfig = configuration["AAD_AUTHORITY"] ?? configuration["AAD:Authority"];
+        _authority = !string.IsNullOrWhiteSpace(authorityConfig)
+            ? authorityConfig
+            : (string.IsNullOrWhiteSpace(_tenantId) ? string.Empty : $"https://login.microsoftonline.com/{_tenantId}/v2.0");
+        var audiencesRaw = configuration["EMBED_EXPECTED_AUDIENCES"] ?? configuration["Embed:ExpectedAudiences"] ?? string.Empty;
+        _expectedAudiences = audiencesRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (string.IsNullOrWhiteSpace(_authority))
+            _logger.LogWarning("Authority is empty. Provide AAD_AUTHORITY or AAD_TENANT_ID in appsettings.");
+        else
+            _logger.LogInformation("SessionController configured authority {Authority} audiences {Audiences}", _authority, string.Join(',', _expectedAudiences));
+    }
+
+    [HttpPost("start")]
+    public async Task<IActionResult> Start([FromBody] SessionStartDto body)
+    {
+        var token = body?.token;
+        if (string.IsNullOrWhiteSpace(token))
             return Unauthorized();
 
-        // Issue a simple dev cookie. In prod, sign/encrypt and use a real session id.
+        _logger.LogDebug("/api/session/start invoked. Authority={Authority} Tenant={Tenant} AudienceCount={AudienceCount}", _authority, _tenantId, _expectedAudiences.Length);
+
+        // Validate Entra ID (Azure AD) JWT
+        try
+        {
+            var principal = await ValidateEntraJwtAsync(token);
+            var sub = principal.FindFirst("sub")?.Value
+                      ?? principal.FindFirst("oid")?.Value
+                      ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                      ?? "unknown";
+            var tid = principal.FindFirst("tid")?.Value ?? "unknown";
+
+            IssueSessionCookie(sub, tid);
+            return NoContent();
+        }
+        catch (SecurityTokenException ex)
+        {
+            return Unauthorized(new { error = "invalid_token", message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Unauthorized(new { error = "token_validation_error", message = ex.Message });
+        }
+    }
+
+
+    private ConfigurationManager<OpenIdConnectConfiguration> GetConfigManager()
+    {
+        if (string.IsNullOrWhiteSpace(_authority))
+            throw new InvalidOperationException("Authority not configured.");
+        return _authorityMetadata.GetOrAdd(_authority, auth =>
+        {
+            var metadata = $"{auth.TrimEnd('/')}/.well-known/openid-configuration";
+            return new ConfigurationManager<OpenIdConnectConfiguration>(
+                metadata,
+                new OpenIdConnectConfigurationRetriever(),
+                new HttpDocumentRetriever { RequireHttps = true });
+        });
+    }
+
+    private async Task<ClaimsPrincipal> ValidateEntraJwtAsync(string jwt)
+    {
+        var cfg = GetConfigManager();
+        var oidc = await cfg.GetConfigurationAsync(HttpContext.RequestAborted);
+
+        var validIssuers = string.IsNullOrWhiteSpace(_tenantId)
+            ? Array.Empty<string>()
+            : new[]
+            {
+                $"https://login.microsoftonline.com/{_tenantId}/v2.0",
+                $"https://login.microsoftonline.com/{_tenantId}/",
+                $"https://sts.windows.net/{_tenantId}/"
+            };
+
+        if (_expectedAudiences.Length == 0)
+            throw new SecurityTokenInvalidAudienceException("EMBED_EXPECTED_AUDIENCES not configured");
+
+        var tvp = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKeys = oidc.SigningKeys,
+
+            ValidateIssuer = true,
+            ValidIssuers = validIssuers,
+
+            ValidateAudience = true,
+            ValidAudiences = _expectedAudiences,
+
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(2),
+
+            ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 }
+        };
+
+        var handler = new JwtSecurityTokenHandler();
+        var principal = handler.ValidateToken(jwt, tvp, out var validated);
+        if (validated is JwtSecurityToken j && !string.Equals(j.Header.Alg, SecurityAlgorithms.RsaSha256, StringComparison.Ordinal))
+            throw new SecurityTokenInvalidAlgorithmException("Unexpected token alg");
+
+        return principal;
+    }
+
+    private void IssueSessionCookie(string sub, string tid)
+    {
         Response.Cookies.Append(
             "embed_session",
-            "dev-ok",
-            new CookieOptions {
+            $"ok:{sub}:{tid}",
+            new CookieOptions
+            {
                 HttpOnly = true,
-                Secure = true,        // required for SameSite=None
+                Secure = true,
                 SameSite = SameSiteMode.None,
                 Path = "/",
                 MaxAge = TimeSpan.FromHours(1)
             });
-
-        return NoContent();
-    }
-
-    // Issues an embed token for the parent to pass into the iframe bootstrap.
-    // For local/dev, if EMBED_JWT_PRIVATE_KEY is not set, returns the static token "123".
-    // In production, set EMBED_JWT_PRIVATE_KEY to an RSA private key in PEM format.
-    [HttpGet("embed-token")]
-    public IActionResult GetEmbedToken()
-    {
-        // Try to discover user from claims (AAD tokens often carry oid/tid)
-        var oid = User.FindFirst("oid")?.Value ?? "dev-oid";
-        var tid = User.FindFirst("tid")?.Value ?? "dev-tenant";
-
-        var audience = "app.redmancorp.com";
-        var issuer = "your-tab-backend";
-
-        var pem = Environment.GetEnvironmentVariable("EMBED_JWT_PRIVATE_KEY");
-        string token;
-
-        if (string.IsNullOrWhiteSpace(pem))
-        {
-            // Dev fallback: static token expected by the bootstrap for local testing
-            token = "123";
-        }
-        else
-        {
-            using var rsa = RSA.Create();
-            rsa.ImportFromPem(pem.AsSpan());
-
-            var creds = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
-
-            var claims = new List<Claim>
-            {
-                new("sub", oid),
-                new("tid", tid),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new(JwtRegisteredClaimNames.Aud, audience)
-            };
-
-            var handler = new JwtSecurityTokenHandler();
-            var descriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Issuer = issuer,
-                Audience = audience,
-                Expires = DateTime.UtcNow.AddMinutes(5),
-                SigningCredentials = creds,
-            };
-
-            var st = handler.CreateToken(descriptor);
-            token = handler.WriteToken(st);
-        }
-
-        return Ok(new
-        {
-            token,
-            iframeOrigin = "https://app.redmancorp.com",
-            parentOrigin = "https://your-tab-domain.example"
-        });
-    }
 }
+    }

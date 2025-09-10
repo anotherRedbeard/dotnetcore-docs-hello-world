@@ -64,7 +64,10 @@ jobs:
           az webapp config appsettings set \
             --resource-group "${{ vars.AZURE_RG_NAME }}" \
             --name "${{ vars.AZURE_APP_NAME }}" \
-            --settings EMBED_ALLOWED_ORIGINS="https://teams.microsoft.com,https://localhost:53000"
+            --settings EMBED_ALLOWED_ORIGINS="https://teams.microsoft.com,https://localhost:53000" \
+              AAD_TENANT_ID="${{ secrets.ENTRA_TENANT_ID }}" \
+              AAD_AUTHORITY="https://login.microsoftonline.com/${{ secrets.ENTRA_TENANT_ID }}/v2.0" \
+              EMBED_EXPECTED_AUDIENCES="api://localhost:53000/${{ secrets.ENTRA_TENANT_ID }}" 
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
